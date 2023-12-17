@@ -1,6 +1,7 @@
-package kz.zsanzharko.service.profile;
+package kz.zsanzharko.implement;
 
 import kz.zsanzharko.enums.Lang;
+import kz.zsanzharko.service.ProfileService;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import kz.zsanzharko.enums.ProfileRole;
@@ -14,10 +15,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @Slf4j
-public class DatabaseProfileServiceImpl implements ProfileService {
+public class ProfileServiceImpl implements ProfileService {
     private final DatabaseConnector connector;
 
-    public DatabaseProfileServiceImpl() {
+    public ProfileServiceImpl() {
         this.connector = DatabaseConnector.getInstance();
     }
 
@@ -153,44 +154,5 @@ public class DatabaseProfileServiceImpl implements ProfileService {
             throw new RuntimeException(e);
         }
         return false;
-    }
-
-    @Override
-    public void enableMarkChecker(Profile profile) {
-        if (profile.getState() == ProfileState.IN_QUESTIONS) return;
-        final String sql = """
-                update mark_checker.profiles
-                set profile_state = ?
-                where chat_id = ?
-                """;
-        try (PreparedStatement statement = connector.getConnection().prepareStatement(sql)) {
-            statement.setString(1, String.valueOf(ProfileState.IN_QUESTIONS));
-            statement.setLong(2, profile.getChatId());
-            log.debug("\n{}", statement);
-            statement.executeUpdate();
-            profile.setState(ProfileState.IN_QUESTIONS);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void disableMarkChecker(Profile profile) {
-        if (profile.getState() == ProfileState.NONE) return;
-
-        final String sql = """
-                update mark_checker.profiles
-                set profile_state = ?
-                where chat_id = ?
-                """;
-        try (PreparedStatement statement = connector.getConnection().prepareStatement(sql)) {
-            statement.setString(1, String.valueOf(ProfileState.NONE));
-            statement.setLong(2, profile.getChatId());
-            log.debug("\n{}", statement);
-            statement.executeUpdate();
-            profile.setState(ProfileState.NONE);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

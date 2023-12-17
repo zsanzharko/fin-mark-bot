@@ -2,6 +2,7 @@ package kz.zsanzharko;
 
 
 import kz.zsanzharko.utils.DatabaseConnector;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -14,17 +15,25 @@ import java.util.Properties;
 @Slf4j
 public class App {
     private static final String PROPERTY_FILE_NAME = "application.properties";
-    public static void main(String[] args) throws TelegramApiException, IOException, ClassNotFoundException {
+    @SneakyThrows({ClassNotFoundException.class})
+    public static void main(String[] args) {
         new App().run();
     }
 
-    public void run() throws TelegramApiException, IOException, ClassNotFoundException {
+    public void run() throws ClassNotFoundException {
+        try {
         Properties properties = initAppProp();
         initDatasource(properties);
         TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
         String username = properties.getProperty("bot.username");
         String token = properties.getProperty("bot.token");
         botsApi.registerBot(new FinanceReportBot(token, username));
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+        } catch (TelegramApiException e) {
+            log.error(e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
 
     private static Properties initAppProp() throws IOException {

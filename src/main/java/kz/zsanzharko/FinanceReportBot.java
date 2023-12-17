@@ -1,8 +1,8 @@
 package kz.zsanzharko;
 
 import kz.zsanzharko.exception.InvalidProfileException;
-import kz.zsanzharko.service.telegram.BasicTelegramService;
-import kz.zsanzharko.service.telegram.ProfileTelegramService;
+import kz.zsanzharko.implement.BasicTelegramService;
+import kz.zsanzharko.model.Profile;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -15,10 +15,8 @@ import java.sql.SQLException;
 
 @Slf4j
 public class FinanceReportBot extends TelegramLongPollingBot {
+    private final BasicTelegramService service = new BasicTelegramService(this);
     private final String username;
-    private final BasicTelegramService telegramService = new BasicTelegramService(this);
-    private final ProfileTelegramService profileService = new ProfileTelegramService(this);
-
 
 
     public FinanceReportBot(String token, String username) {
@@ -30,21 +28,13 @@ public class FinanceReportBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
+            Profile profile = service.authorize(update);
             if (update.hasMessage() && update.getMessage().hasText()) {
                 var message = update.getMessage();
-                var profile = profileService.authorize(message.getChatId());
-                if (telegramService.isCommand(message.getText())) {
-                    telegramService.commandResolve(profile, message.getText());
-                }
-                if (!profile.validate()) {
-                    profileService.blankProfile(profile, message.getText());
-                    return;
-                }
-                telegramService.messageResolve(profile, message.getText());
+                service.messageResolve(profile, message);
             } else if (update.hasCallbackQuery()) {
                 CallbackQuery callback = update.getCallbackQuery();
-                var profile = profileService.authorize(callback.getMessage().getChatId());
-                telegramService.callbackResolve(profile, callback.getData());
+                service.callbackResolve(profile, callback);
             }
         } catch (InvalidProfileException e) {
             execute(SendMessage.builder()

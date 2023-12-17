@@ -1,25 +1,23 @@
-package kz.zsanzharko.service.telegram;
+package kz.zsanzharko.implement;
 
+import kz.zsanzharko.model.Profile;
 import lombok.extern.slf4j.Slf4j;
 import kz.zsanzharko.exception.InvalidProfileException;
-import kz.zsanzharko.model.Profile;
-import kz.zsanzharko.service.profile.DatabaseProfileServiceImpl;
-import kz.zsanzharko.service.profile.ProfileService;
-import kz.zsanzharko.utils.CommandUtils;
+import kz.zsanzharko.service.ProfileService;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
-public class ProfileTelegramService {
+public class TelegramProfileService {
     private final AbsSender sender;
-    private final CommandUtils commandUtils;
+    private final TelegramResponseService telegramResponseService;
     private final ProfileService profileService;
 
-    public ProfileTelegramService(AbsSender sender) {
+    public TelegramProfileService(AbsSender sender) {
         this.sender = sender;
-        this.profileService = new DatabaseProfileServiceImpl();
-        this.commandUtils = new CommandUtils();
+        this.profileService = new ProfileServiceImpl();
+        this.telegramResponseService = new TelegramResponseService(sender);
     }
 
     public Profile authorize(Long chatId) throws InvalidProfileException {
@@ -30,7 +28,7 @@ public class ProfileTelegramService {
     }
 
     public void blankProfile(Profile profile, String credentials) throws TelegramApiException {
-        if (commandUtils.isCommand(credentials)) {
+        if (telegramResponseService.isCommand(credentials)) {
             sendAuthorizeMessage(profile.getChatId());
             return;
         }
